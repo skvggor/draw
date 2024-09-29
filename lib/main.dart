@@ -55,11 +55,20 @@ class _MyHomePageState extends State<MyHomePage> {
         mainAxisAlignment: MainAxisAlignment.center,
         children: <Widget>[
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16.0),
-            child: Text(
-              _items.isEmpty ? 'No items' : _items.join(', '),
-            ),
-          ),
+              padding: const EdgeInsets.symmetric(horizontal: 16.0),
+              child: Wrap(
+                spacing: 8.0,
+                children: _items
+                    .map((item) => InputChip(
+                          label: Text(item),
+                          onDeleted: () {
+                            setState(() {
+                              _items.remove(item);
+                            });
+                          },
+                        ))
+                    .toList(),
+              )),
           Padding(
             padding: const EdgeInsets.all(16.0),
             child: Row(
