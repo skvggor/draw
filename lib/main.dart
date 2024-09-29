@@ -33,6 +33,7 @@ class _MyHomePageState extends State<MyHomePage> {
   final List<String> _items = [];
   final TextEditingController _textController = TextEditingController();
   final FocusNode _focusNode = FocusNode();
+  final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
 
   @override
   void initState() {
@@ -41,27 +42,79 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   void _addItem(String value) {
-    setState(() {
-      _items.add(value);
-      _textController.clear();
-      _focusNode.requestFocus();
-    });
+    if (_formKey.currentState!.validate()) {
+      setState(() {
+        final normalizedValue = _normalizeValue(value);
+
+        if (normalizedValue.contains(',')) {
+          _addMultipleItems(normalizedValue);
+        } else {
+          _addSingleItem(normalizedValue);
+        }
+
+        _clearInput();
+      });
+    }
+  }
+
+  String _normalizeValue(String value) {
+    return value.replaceAll(RegExp(r'\s{2,}'), ' ').trim();
+  }
+
+  void _addMultipleItems(String value) {
+    final items = value
+        .split(',')
+        .map((item) => item.trim())
+        .where((item) => item.isNotEmpty && !_items.contains(item))
+        .toList();
+
+    _items.addAll(items);
+    _sortItems();
+  }
+
+  void _addSingleItem(String item) {
+    if (!_items.contains(item)) {
+      _items.add(item);
+      _sortItems();
+    }
+  }
+
+  void _sortItems() {
+    _items.sort((a, b) => a.toLowerCase().compareTo(b.toLowerCase()));
   }
 
   void _clearItems() {
     setState(() {
       _items.clear();
-      _textController.clear();
-      _focusNode.requestFocus();
+      _clearInput();
     });
   }
 
   void _removeItem(String item) {
     setState(() {
       _items.remove(item);
-      _textController.clear();
-      _focusNode.requestFocus();
+      _clearInput();
     });
+  }
+
+  String? _validate(String value) {
+    if (value.isEmpty || value.trim().isEmpty) {
+      _clearInput();
+
+      return 'Please enter an item.';
+    }
+
+    if (_items.contains(value.trim())) {
+      _clearInput();
+      return 'Item already added.';
+    }
+
+    return null;
+  }
+
+  void _clearInput() {
+    _textController.clear();
+    _focusNode.requestFocus();
   }
 
   @override
@@ -95,39 +148,56 @@ class _MyHomePageState extends State<MyHomePage> {
           ),
           Padding(
             padding: const EdgeInsets.all(16.0),
-            child: Row(
-              children: [
-                Expanded(
-                  child: TextField(
-                    controller: _textController,
-                    focusNode: _focusNode,
-                    decoration: const InputDecoration(
-                      border: OutlineInputBorder(),
-                      labelText: 'Add a new item',
+            child: Form(
+              key: _formKey,
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        TextFormField(
+                          controller: _textController,
+                          focusNode: _focusNode,
+                          decoration: const InputDecoration(
+                            border: OutlineInputBorder(),
+                            labelText: 'Add a new item',
+                          ),
+                          validator: (value) => _validate(value!),
+                          onFieldSubmitted: (value) => _addItem(value),
+                        ),
+                        if (_formKey.currentState?.hasError ?? false)
+                          const SizedBox(height: 8),
+                      ],
                     ),
-                    onSubmitted: (value) => _addItem(value),
                   ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.all(8.0),
-                  child: Wrap(children: [
-                    IconButton(
-                      tooltip: 'Add',
-                      icon: const Icon(Icons.add),
-                      onPressed: () => _addItem(_textController.text),
-                    ),
-                    IconButton(
-                      tooltip: 'Clear',
-                      icon: const Icon(Icons.not_interested),
-                      onPressed: () => _clearItems(),
-                    )
-                  ]),
-                ),
-              ],
+                  const SizedBox(width: 8),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.start,
+                    children: [
+                      IconButton(
+                        tooltip: 'Add',
+                        icon: const Icon(Icons.add),
+                        onPressed: () => _addItem(_textController.text),
+                      ),
+                      IconButton(
+                        tooltip: 'Clear',
+                        icon: const Icon(Icons.not_interested),
+                        onPressed: () => _clearItems(),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
             ),
           ),
         ],
       ),
     );
   }
+}
+
+extension on FormState? {
+  get hasError => null;
 }
