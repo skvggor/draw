@@ -40,9 +40,25 @@ class _MyHomePageState extends State<MyHomePage> {
     _focusNode.requestFocus();
   }
 
-  void _handlerInput(String value) {
+  void _addItem(String value) {
     setState(() {
       _items.add(value);
+      _textController.clear();
+      _focusNode.requestFocus();
+    });
+  }
+
+  void _clearItems() {
+    setState(() {
+      _items.clear();
+      _textController.clear();
+      _focusNode.requestFocus();
+    });
+  }
+
+  void _removeItem(String item) {
+    setState(() {
+      _items.remove(item);
       _textController.clear();
       _focusNode.requestFocus();
     });
@@ -55,20 +71,28 @@ class _MyHomePageState extends State<MyHomePage> {
         mainAxisAlignment: MainAxisAlignment.center,
         children: <Widget>[
           Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16.0),
-              child: Wrap(
-                spacing: 8.0,
-                children: _items
-                    .map((item) => InputChip(
-                          label: Text(item),
-                          onDeleted: () {
-                            setState(() {
-                              _items.remove(item);
-                            });
-                          },
-                        ))
-                    .toList(),
-              )),
+            padding: const EdgeInsets.symmetric(horizontal: 16.0),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                _items.isEmpty
+                    ? const Text('No items added yet.')
+                    : const Text('Added items:'),
+                const SizedBox(width: 8.0),
+                Expanded(
+                  child: Wrap(
+                    spacing: 8.0,
+                    children: _items.map((item) {
+                      return Chip(
+                        label: Text(item),
+                        onDeleted: () => _removeItem(item),
+                      );
+                    }).toList(),
+                  ),
+                ),
+              ],
+            ),
+          ),
           Padding(
             padding: const EdgeInsets.all(16.0),
             child: Row(
@@ -76,21 +100,28 @@ class _MyHomePageState extends State<MyHomePage> {
                 Expanded(
                   child: TextField(
                     controller: _textController,
-                    focusNode: _focusNode, // Associa o FocusNode ao TextField
+                    focusNode: _focusNode,
                     decoration: const InputDecoration(
                       border: OutlineInputBorder(),
                       labelText: 'Add a new item',
                     ),
-                    onSubmitted: (value) => _handlerInput(value),
+                    onSubmitted: (value) => _addItem(value),
                   ),
                 ),
                 Padding(
                   padding: const EdgeInsets.all(8.0),
-                  child: IconButton(
-                    tooltip: 'Add',
-                    icon: const Icon(Icons.add),
-                    onPressed: () => _handlerInput(_textController.text),
-                  ),
+                  child: Wrap(children: [
+                    IconButton(
+                      tooltip: 'Add',
+                      icon: const Icon(Icons.add),
+                      onPressed: () => _addItem(_textController.text),
+                    ),
+                    IconButton(
+                      tooltip: 'Clear',
+                      icon: const Icon(Icons.not_interested),
+                      onPressed: () => _clearItems(),
+                    )
+                  ]),
                 ),
               ],
             ),
