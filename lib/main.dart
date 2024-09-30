@@ -1,4 +1,6 @@
+import 'dart:math';
 import 'package:flutter/material.dart';
+import 'package:widget_and_text_animator/widget_and_text_animator.dart';
 
 void main() {
   runApp(const MyApp());
@@ -30,10 +32,12 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
+  String? _itemDraw;
   final List<String> _items = [];
   final TextEditingController _textController = TextEditingController();
   final FocusNode _focusNode = FocusNode();
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
+  bool _shouldAnimate = false;
 
   @override
   void initState() {
@@ -100,7 +104,6 @@ class _MyHomePageState extends State<MyHomePage> {
   String? _validate(String value) {
     if (value.isEmpty || value.trim().isEmpty) {
       _clearInput();
-
       return 'Please enter an item.';
     }
 
@@ -115,6 +118,28 @@ class _MyHomePageState extends State<MyHomePage> {
   void _clearInput() {
     _textController.clear();
     _focusNode.requestFocus();
+  }
+
+  void _draw() {
+    if (_items.isNotEmpty) {
+      setState(() {
+        final random = Random();
+        final index = random.nextInt(_items.length);
+        _itemDraw = _items[index].toUpperCase();
+        _shouldAnimate = true;
+
+        _items.removeAt(index);
+      });
+
+      Future.delayed(const Duration(milliseconds: 1500), () {
+        setState(() {
+          _shouldAnimate = false;
+        });
+      });
+      _clearInput();
+    } else {
+      _clearInput();
+    }
   }
 
   @override
@@ -184,13 +209,41 @@ class _MyHomePageState extends State<MyHomePage> {
                       IconButton(
                         tooltip: 'Clear',
                         icon: const Icon(Icons.not_interested),
-                        onPressed: () => _clearItems(),
+                        onPressed: _clearItems,
+                      ),
+                      IconButton(
+                        tooltip: 'Draw',
+                        icon: const Icon(Icons.casino),
+                        onPressed: _draw,
                       ),
                     ],
                   ),
                 ],
               ),
             ),
+          ),
+          Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: _shouldAnimate && _itemDraw != null
+                ? WidgetAnimator(
+                    incomingEffect: WidgetTransitionEffects(
+                      delay: const Duration(milliseconds: 500),
+                      curve: Curves.easeInOut,
+                      offset: const Offset(0, -30),
+                      duration: const Duration(milliseconds: 900),
+                    ),
+                    atRestEffect: WidgetRestingEffects.wave(),
+                    child: Text(
+                      _itemDraw!,
+                      style: const TextStyle(fontSize: 50),
+                    ),
+                  )
+                : _itemDraw != null
+                    ? Text(
+                        _itemDraw!,
+                        style: const TextStyle(fontSize: 50),
+                      )
+                    : Container(),
           ),
         ],
       ),
